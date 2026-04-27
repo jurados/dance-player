@@ -375,8 +375,6 @@
     <div style="font-size:.68rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Sonido</div>
     <div class="option-row" id="soundSelector">
       <button class="btn-option active" onclick="setSound('click',  this)">Clic</button>
-      <button class="btn-option"        onclick="setSound('conga',  this)">Conga</button>
-      <button class="btn-option"        onclick="setSound('clave',  this)">Clave</button>
       <button class="btn-option"        onclick="setSound('palmas', this)">Palmas</button>
     </div>
 
@@ -724,25 +722,32 @@ function updateNavButtons() {
   document.getElementById('btnNext').classList.toggle('disabled', queueIdx >= queue.length - 1);
 }
 
+let _loadGen = 0;
 async function loadSong(idx) {
-  const item     = queue[idx];
-  const wasPlay  = !audio.paused;
+  // Cancelar modal pendiente de una llamada concurrente anterior
+  if (_modalResolve) {
+    document.getElementById('loopModal').classList.remove('open');
+    const prev = _modalResolve; _modalResolve = null; prev(false);
+  }
+  const gen = ++_loadGen;
+
+  const item    = queue[idx];
+  const wasPlay = !audio.paused;
 
   // Preguntar si conservar el loop al cambiar de canción
   if (loopActive) {
     const keep = await askLoopModal();
+    if (gen !== _loadGen) return; // llamada más nueva llegó mientras esperábamos
     if (!keep) clearLoop();
   } else {
     clearLoop();
   }
 
-  // Resetear velocidad sin afectar sincronización de BPM
-  if (speed !== 100) {
-    const wasSyncBPM = syncBPM;
-    syncBPM = false;
-    setSpeed(100);
-    syncBPM = wasSyncBPM;
-  }
+  // Resetear velocidad sin afectar sincronización de BPM (siempre, para mantener fill en sync)
+  const wasSyncBPM = syncBPM;
+  syncBPM = false;
+  setSpeed(100);
+  syncBPM = wasSyncBPM;
 
   const objUrl   = URL.createObjectURL(item.file);
   audio.src = objUrl;
@@ -1004,18 +1009,20 @@ function setSpeed(val) {
 // ═══════════════════════════════════════════
 //  LOOP A/B
 // ═══════════════════════════════════════════
+let _modalResolve = null;
 function askLoopModal() {
   return new Promise(resolve => {
+    _modalResolve = resolve;
     const modal = document.getElementById('loopModal');
     modal.classList.add('open');
-    const onKeep  = () => { modal.classList.remove('open'); cleanup(); resolve(true); };
-    const onClear = () => { modal.classList.remove('open'); cleanup(); resolve(false); };
-    function cleanup() {
-      document.getElementById('loopModalKeep').removeEventListener('click', onKeep);
-      document.getElementById('loopModalClear').removeEventListener('click', onClear);
-    }
-    document.getElementById('loopModalKeep').addEventListener('click', onKeep,  { once: true });
-    document.getElementById('loopModalClear').addEventListener('click', onClear, { once: true });
+    const done = val => {
+      if (_modalResolve !== resolve) return; // superseded
+      modal.classList.remove('open');
+      _modalResolve = null;
+      resolve(val);
+    };
+    document.getElementById('loopModalKeep').addEventListener('click',  () => done(true),  { once: true });
+    document.getElementById('loopModalClear').addEventListener('click', () => done(false), { once: true });
   });
 }
 
@@ -1167,27 +1174,6 @@ const SOUNDS = {
     g.gain.setValueAtTime(acc ? .9 : .55, t);
     g.gain.exponentialRampToValueAtTime(.001, t + .045);
     o.start(t); o.stop(t + .045);
-  },
-  conga(beat, t, ctx) {
-    const acc = accentBeats.has(beat);
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(metGainNode);
-    const f = acc ? 210 : 155;
-    o.frequency.setValueAtTime(f, t);
-    o.frequency.exponentialRampToValueAtTime(f * .38, t + .12);
-    g.gain.setValueAtTime(acc ? .85 : .55, t);
-    g.gain.exponentialRampToValueAtTime(.001, t + .16);
-    o.start(t); o.stop(t + .16);
-  },
-  clave(beat, t, ctx) {
-    const acc = accentBeats.has(beat);
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(metGainNode);
-    o.type = 'square';
-    o.frequency.value = acc ? 1700 : 1350;
-    g.gain.setValueAtTime(acc ? .38 : .24, t);
-    g.gain.exponentialRampToValueAtTime(.001, t + .02);
-    o.start(t); o.stop(t + .022);
   },
   palmas(beat, t, ctx) {
     const acc = accentBeats.has(beat);
@@ -1609,8 +1595,8 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 // ═══════════════════════════════════════════
 let _landscapeOpen = false;
 
-function openLandscape() {
-  const src = document.getElementById('localVideoEl').src;
+async function openLandscape() {
+  const src = document.getElementById('localVideoEl').getAttribute('src');
   if (!src) return;
   const lv = document.getElementById('landscapeVideoEl');
   lv.src = src;
@@ -1620,6 +1606,17 @@ function openLandscape() {
   document.getElementById('vidLandscape').classList.add('open');
   document.getElementById('lsTimeDur').textContent = fmt(audio.duration);
   _landscapeOpen = true;
+  // Activar Wake Lock automáticamente al rotar
+  if ('wakeLock' in navigator && !wakeLock) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      document.getElementById('btnWakeLock').classList.add('active');
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+        document.getElementById('btnWakeLock').classList.remove('active');
+      });
+    } catch (e) {}
+  }
 }
 
 function closeLandscape() {
