@@ -536,10 +536,25 @@ document.addEventListener('touchend', e => {
 function setupMediaSession(name) {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.metadata = new MediaMetadata({ title: name, artist: 'Dance Player' });
-  navigator.mediaSession.setActionHandler('play',           () => { audio.play();  document.getElementById('btnPlay').textContent = '⏸'; });
-  navigator.mediaSession.setActionHandler('pause',          () => { audio.pause(); document.getElementById('btnPlay').textContent = '▶'; });
-  navigator.mediaSession.setActionHandler('previoustrack',  prevSong);
-  navigator.mediaSession.setActionHandler('nexttrack',      nextSong);
+  navigator.mediaSession.setActionHandler('play',  () => { audio.play();  document.getElementById('btnPlay').textContent = '⏸'; });
+  navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); document.getElementById('btnPlay').textContent = '▶'; });
+  navigator.mediaSession.setActionHandler('stop',  () => { audio.pause(); audio.currentTime = 0; document.getElementById('btnPlay').textContent = '▶'; });
+  // Doble presión atrás: si llevamos >3s reinicia la canción; si no, va a la anterior
+  navigator.mediaSession.setActionHandler('previoustrack', () => {
+    if (audio.currentTime > 3) { audio.currentTime = 0; }
+    else { prevSong(); }
+  });
+  navigator.mediaSession.setActionHandler('nexttrack', nextSong);
+  // Algunos auriculares BT envían seekbackward/seekforward en lugar de prev/next
+  navigator.mediaSession.setActionHandler('seekbackward', d => {
+    audio.currentTime = Math.max(0, audio.currentTime - (d?.seekOffset ?? 10));
+  });
+  navigator.mediaSession.setActionHandler('seekforward', d => {
+    audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + (d?.seekOffset ?? 10));
+  });
+  navigator.mediaSession.setActionHandler('seekto', d => {
+    if (d?.seekTime != null) audio.currentTime = d.seekTime;
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -794,6 +809,10 @@ function togglePlay() {
   else              { audio.pause(); document.getElementById('btnPlay').textContent = '▶'; }
 }
 document.getElementById('btnPlay').addEventListener('click', togglePlay);
+
+// Mantener playbackState sincronizado para que el OS envíe bien los comandos BT
+audio.addEventListener('play',  () => { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; });
+audio.addEventListener('pause', () => { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; });
 
 audio.addEventListener('ended', () => {
   document.getElementById('btnPlay').textContent = '▶';
