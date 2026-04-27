@@ -191,8 +191,8 @@
     <button class="btn-drawer-close" onclick="closeDrawer()">✕</button>
   </div>
   <div class="drawer-body">
-    <button class="file-btn" onclick="openAudioPicker()">+ &nbsp;Agregar canciones</button>
-    <input type="file" id="fileInput" multiple style="display:none">
+    <button class="file-btn" onclick="openAudioPicker()">+ &nbsp;Agregar audio o video</button>
+    <input type="file" id="fileInput" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.flac,.aac,.mp4,.mov" multiple style="display:none">
     <div id="queueList">
       <div style="text-align:center;color:var(--text2);font-size:.82rem;padding:20px 0">
         Ninguna canción cargada
@@ -520,34 +520,43 @@ function closeDrawer() { document.getElementById('drawer').classList.remove('ope
 // ═══════════════════════════════════════════
 //  QUEUE
 // ═══════════════════════════════════════════
-const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac|opus|wma|mp4|webm|aiff|aif)$/i;
+const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac|opus|wma|mp4|mov|webm|aiff|aif|mkv)$/i;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 function addFiles(files) {
-  const audio = [...files].filter(f =>
+  const valid = [...files].filter(f =>
     f.type.startsWith('audio/') || f.type.startsWith('video/') || AUDIO_EXTS.test(f.name)
   );
-  if (!audio.length) return;
-  audio.forEach(f => queue.push({ file: f, name: f.name.replace(/\.[^.]+$/, '') }));
+  if (!valid.length) return;
+  valid.forEach(f => queue.push({ file: f, name: f.name.replace(/\.[^.]+$/, '') }));
   if (queueIdx < 0) { queueIdx = 0; loadSong(0); }
   renderQueue();
 }
 
 async function openAudioPicker() {
-  // Intenta la API moderna que abre el explorador de archivos directamente
-  if ('showOpenFilePicker' in window) {
+  // showOpenFilePicker: abre el explorador nativo (Chrome Android 86+, Desktop)
+  // No disponible en iOS Safari → usa el <input> con accept correcto
+  if (!isIOS && 'showOpenFilePicker' in window) {
     try {
       const handles = await window.showOpenFilePicker({
         multiple: true,
-        types: [{ description: 'Audio', accept: { 'audio/*': ['.mp3','.m4a','.wav','.ogg','.flac','.aac','.opus','.wma'] } }]
+        types: [{
+          description: 'Audio y Video',
+          accept: {
+            'audio/*': ['.mp3','.m4a','.wav','.ogg','.flac','.aac','.opus','.wma','.aiff'],
+            'video/*': ['.mp4','.mov','.webm','.mkv']
+          }
+        }]
       });
       const files = await Promise.all(handles.map(h => h.getFile()));
       addFiles(files);
       return;
     } catch (e) {
-      if (e.name === 'AbortError') return; // usuario canceló
-      // API no soportada, cae al input normal
+      if (e.name === 'AbortError') return;
     }
   }
+  // Fallback: <input file> con accept explícito para iOS y resto de navegadores
+  // En iOS Safari, accept="audio/*,video/*" abre directamente la app Archivos
   document.getElementById('fileInput').click();
 }
 
