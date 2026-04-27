@@ -75,17 +75,14 @@
     .speed-labels { display: flex; justify-content: space-between; font-size: .68rem; color: var(--text2); margin-top: 6px; }
 
     /* ── Loop A/B ── */
-    .loop-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch; margin-bottom: 8px; }
-    .btn-loop-mark { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px; cursor: pointer; transition: all .12s; }
+    .loop-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .btn-loop-mark { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px 8px; cursor: pointer; transition: all .12s; }
     .btn-loop-mark.set-a { border-color: var(--loop-a); background: rgba(34,211,238,.08); }
-    .btn-loop-mark.set-a .loop-mark-time { color: var(--loop-a); }
     .btn-loop-mark.set-b { border-color: var(--loop-b); background: rgba(251,191,36,.07); }
-    .btn-loop-mark.set-b .loop-mark-time { color: var(--loop-b); }
     .btn-loop-mark:active { opacity: .7; }
-    .loop-mark-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text2); }
-    .loop-mark-time { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .btn-loop-toggle { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); padding: 0 8px; font-size: .68rem; font-weight: 800; letter-spacing: .06em; cursor: pointer; writing-mode: vertical-rl; transition: all .15s; }
-    .btn-loop-toggle.active { background: rgba(78,201,138,.15); border-color: var(--green); color: var(--green); }
+    .loop-mark-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text2); }
+    .btn-loop-toggle { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; color: var(--text2); padding: 12px 8px; font-size: .82rem; font-weight: 800; letter-spacing: .1em; cursor: pointer; transition: all .15s; }
+    .btn-loop-toggle.active { background: rgba(78,201,138,.15); border-color: var(--green); color: var(--green); box-shadow: 0 0 10px rgba(78,201,138,.2); }
     .btn-loop-clear { width: 100%; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text2); padding: 8px; font-size: .8rem; cursor: pointer; }
 
     /* ── Waveform ── */
