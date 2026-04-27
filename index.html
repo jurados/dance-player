@@ -192,7 +192,7 @@
   </div>
   <div class="drawer-body">
     <label class="file-btn" for="fileInput">+ &nbsp;Agregar canciones</label>
-    <input type="file" id="fileInput" accept=".mp3,.m4a,.wav,.ogg,.flac,.aac,.opus,.wma,.mp4,.webm" multiple style="display:none">
+    <input type="file" id="fileInput" multiple style="display:none">
     <div id="queueList">
       <div style="text-align:center;color:var(--text2);font-size:.82rem;padding:20px 0">
         Ninguna canción cargada
@@ -506,8 +506,12 @@ function closeDrawer() { document.getElementById('drawer').classList.remove('ope
 // ═══════════════════════════════════════════
 //  QUEUE
 // ═══════════════════════════════════════════
+const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac|opus|wma|mp4|webm|aiff|aif)$/i;
 document.getElementById('fileInput').addEventListener('change', e => {
-  const files = [...e.target.files]; if (!files.length) return;
+  const files = [...e.target.files].filter(f =>
+    f.type.startsWith('audio/') || f.type.startsWith('video/') || AUDIO_EXTS.test(f.name)
+  );
+  if (!files.length) return;
   files.forEach(f => queue.push({ file: f, name: f.name.replace(/\.[^.]+$/, '') }));
   if (queueIdx < 0) { queueIdx = 0; loadSong(0); }
   renderQueue();
