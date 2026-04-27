@@ -191,7 +191,7 @@
     <button class="btn-drawer-close" onclick="closeDrawer()">✕</button>
   </div>
   <div class="drawer-body">
-    <label class="file-btn" for="fileInput">+ &nbsp;Agregar canciones</label>
+    <button class="file-btn" onclick="openAudioPicker()">+ &nbsp;Agregar canciones</button>
     <input type="file" id="fileInput" multiple style="display:none">
     <div id="queueList">
       <div style="text-align:center;color:var(--text2);font-size:.82rem;padding:20px 0">
@@ -230,10 +230,24 @@
       <button onclick="loadVideo()"
               style="background:var(--accent);border:none;border-radius:8px;color:#fff;padding:8px 14px;font-size:.85rem;font-weight:700;cursor:pointer">Cargar</button>
     </div>
-    <div id="ytContainer" style="display:none;position:relative;height:0;overflow:hidden;border-radius:10px">
-      <iframe id="ytFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:10px"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen></iframe>
+    <div id="ytContainer" style="display:none;border-radius:10px;overflow:hidden">
+      <!-- YouTube: iframe 16:9 -->
+      <div id="ytWrap" style="display:none;position:relative;padding-bottom:56.25%;height:0">
+        <iframe id="ytFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+      <!-- Instagram: no permite autoplay en iframe externo, abrimos en nueva pestaña -->
+      <div id="igWrap" style="display:none;text-align:center;padding:20px 0">
+        <div style="font-size:2.5rem;margin-bottom:8px">📸</div>
+        <div style="font-size:.85rem;color:var(--text2);margin-bottom:14px;line-height:1.4">
+          Instagram no permite reproducir videos<br>en apps externas por sus políticas.
+        </div>
+        <a id="igLink" href="#" target="_blank" rel="noopener"
+           style="display:inline-block;padding:11px 24px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);border-radius:10px;color:#fff;font-weight:700;font-size:.9rem;text-decoration:none">
+          Abrir en Instagram ↗
+        </a>
+      </div>
     </div>
   </div>
 
@@ -507,14 +521,38 @@ function closeDrawer() { document.getElementById('drawer').classList.remove('ope
 //  QUEUE
 // ═══════════════════════════════════════════
 const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac|opus|wma|mp4|webm|aiff|aif)$/i;
-document.getElementById('fileInput').addEventListener('change', e => {
-  const files = [...e.target.files].filter(f =>
+
+function addFiles(files) {
+  const audio = [...files].filter(f =>
     f.type.startsWith('audio/') || f.type.startsWith('video/') || AUDIO_EXTS.test(f.name)
   );
-  if (!files.length) return;
-  files.forEach(f => queue.push({ file: f, name: f.name.replace(/\.[^.]+$/, '') }));
+  if (!audio.length) return;
+  audio.forEach(f => queue.push({ file: f, name: f.name.replace(/\.[^.]+$/, '') }));
   if (queueIdx < 0) { queueIdx = 0; loadSong(0); }
   renderQueue();
+}
+
+async function openAudioPicker() {
+  // Intenta la API moderna que abre el explorador de archivos directamente
+  if ('showOpenFilePicker' in window) {
+    try {
+      const handles = await window.showOpenFilePicker({
+        multiple: true,
+        types: [{ description: 'Audio', accept: { 'audio/*': ['.mp3','.m4a','.wav','.ogg','.flac','.aac','.opus','.wma'] } }]
+      });
+      const files = await Promise.all(handles.map(h => h.getFile()));
+      addFiles(files);
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return; // usuario canceló
+      // API no soportada, cae al input normal
+    }
+  }
+  document.getElementById('fileInput').click();
+}
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  addFiles(e.target.files);
   e.target.value = '';
 });
 
@@ -1243,15 +1281,17 @@ function toggleYT() {
 function loadVideo() {
   const raw = document.getElementById('ytInput').value.trim();
   if (!raw) return;
-  const frame     = document.getElementById('ytFrame');
+
   const container = document.getElementById('ytContainer');
+  const ytWrap    = document.getElementById('ytWrap');
+  const igWrap    = document.getElementById('igWrap');
 
   // Instagram: post, reel o tv
-  const igMatch = raw.match(/instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
+  const igMatch = raw.match(/instagram\.com\/(p|reel|tv|stories\/[^/]+)\/([A-Za-z0-9_-]+)/);
   if (igMatch) {
-    const [, type, id] = igMatch;
-    frame.src = `https://www.instagram.com/${type}/${id}/embed/`;
-    container.style.paddingBottom = '125%'; // proporción portrait de Instagram
+    document.getElementById('igLink').href = raw;
+    ytWrap.style.display = 'none';
+    igWrap.style.display = 'block';
     container.style.display = 'block';
     return;
   }
@@ -1260,9 +1300,13 @@ function loadVideo() {
   let ytId = raw;
   const m = raw.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
   if (m) ytId = m[1];
-  if (!/^[A-Za-z0-9_-]{11}$/.test(ytId)) { alert('URL no reconocida.\nPega una URL de YouTube o Instagram.'); return; }
-  frame.src = `https://www.youtube-nocookie.com/embed/${ytId}?rel=0`;
-  container.style.paddingBottom = '56.25%'; // 16:9 YouTube
+  if (!/^[A-Za-z0-9_-]{11}$/.test(ytId)) {
+    alert('URL no reconocida.\nPega una URL de YouTube o Instagram.');
+    return;
+  }
+  document.getElementById('ytFrame').src = `https://www.youtube-nocookie.com/embed/${ytId}?rel=0`;
+  igWrap.style.display = 'none';
+  ytWrap.style.display = 'block';
   container.style.display = 'block';
 }
 
