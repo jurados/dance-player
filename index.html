@@ -164,6 +164,17 @@
 
     audio { display: none; }
 
+    /* ── Mini-modal (loop prompt) ── */
+    .mini-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 200; display: none; align-items: center; justify-content: center; }
+    .mini-modal-bg.open { display: flex; }
+    .mini-modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 18px; padding: 22px 20px 16px; max-width: 300px; width: 90%; text-align: center; }
+    .mini-modal-title { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
+    .mini-modal-body  { font-size: .82rem; color: var(--text2); margin-bottom: 18px; line-height: 1.4; }
+    .mini-modal-btns  { display: flex; gap: 10px; }
+    .mini-modal-btns button { flex: 1; padding: 11px; border-radius: 11px; border: 1px solid var(--border); font-size: .88rem; font-weight: 700; cursor: pointer; }
+    .mini-modal-keep  { background: rgba(78,201,138,.15); border-color: var(--green) !important; color: var(--green); }
+    .mini-modal-clear { background: var(--bg3); color: var(--text2); }
+
     /* ── Landscape video overlay ── */
     .vid-landscape { position: fixed; inset: 0; background: #000; z-index: 110; display: none; }
     .vid-landscape.open { display: block; }
@@ -196,6 +207,18 @@
     <input type="range" min="0" max="1" step="0.001" value="0" id="lsSeekBar" oninput="lsSeek(this.value)">
     <span class="vid-landscape-time" id="lsTimeDur">0:00</span>
     <button onclick="closeLandscape()">✕</button>
+  </div>
+</div>
+
+<!-- LOOP KEEP/CLEAR MODAL -->
+<div class="mini-modal-bg" id="loopModal">
+  <div class="mini-modal">
+    <div class="mini-modal-title">Loop activo</div>
+    <div class="mini-modal-body">¿Qué hacemos con el loop A/B<br>al cambiar de canción?</div>
+    <div class="mini-modal-btns">
+      <button class="mini-modal-keep"  id="loopModalKeep">Mantener</button>
+      <button class="mini-modal-clear" id="loopModalClear">Limpiar</button>
+    </div>
   </div>
 </div>
 
@@ -648,15 +671,21 @@ async function loadSong(idx) {
   const item     = queue[idx];
   const wasPlay  = !audio.paused;
 
-  // Bug 1: preguntar si conservar el loop al cambiar de canción
+  // Preguntar si conservar el loop al cambiar de canción
   if (loopActive) {
-    if (!confirm('¿Mantener el loop A/B para esta canción?')) clearLoop();
+    const keep = await askLoopModal();
+    if (!keep) clearLoop();
   } else {
     clearLoop();
   }
 
-  // Bug 5: resetear velocidad al cargar nueva canción
-  if (speed !== 100) setSpeed(100);
+  // Resetear velocidad sin afectar sincronización de BPM
+  if (speed !== 100) {
+    const wasSyncBPM = syncBPM;
+    syncBPM = false;
+    setSpeed(100);
+    syncBPM = wasSyncBPM;
+  }
 
   const objUrl   = URL.createObjectURL(item.file);
   audio.src = objUrl;
@@ -835,12 +864,16 @@ audio.addEventListener('pause', () => {
 audio.addEventListener('ended', () => {
   document.getElementById('btnPlay').textContent = '▶';
   if (loopActive && (loopA !== null || loopB !== null)) {
+    // timeupdate handles loop before end; this is a safety net fallback
     const loopTarget = loopA !== null ? loopA : 0;
     audio.currentTime = loopTarget;
     const lv = document.getElementById('localVideoEl');
     if (lv.src) lv.currentTime = loopTarget;
-    audio.play();
-    document.getElementById('btnPlay').textContent = '⏸';
+    setTimeout(() => {
+      audio.play().then(() => {
+        document.getElementById('btnPlay').textContent = '⏸';
+      }).catch(() => {});
+    }, 30);
   } else if (queueIdx < queue.length - 1) {
     nextSong();
     audio.addEventListener('canplay', () => { audio.play(); document.getElementById('btnPlay').textContent = '⏸'; }, { once: true });
@@ -852,11 +885,14 @@ audio.addEventListener('timeupdate', () => {
   const pct = audio.currentTime / audio.duration;
   document.getElementById('wavePlayhead').style.left = (pct * 100) + '%';
   document.getElementById('timeCurrent').textContent  = fmt(audio.currentTime);
-  if (loopActive && loopB !== null && audio.currentTime >= loopB) {
-    const loopTarget = loopA !== null ? loopA : 0;
-    audio.currentTime = loopTarget;
-    const lv = document.getElementById('localVideoEl');
-    if (lv.src) lv.currentTime = loopTarget;
+  if (loopActive) {
+    const a  = loopA !== null ? loopA : 0;
+    const b  = loopB !== null ? loopB : (audio.duration - 0.15);
+    if (audio.currentTime >= b && b > 0) {
+      audio.currentTime = a;
+      const lv = document.getElementById('localVideoEl');
+      if (lv.src) lv.currentTime = a;
+    }
   }
 });
 audio.addEventListener('loadedmetadata', () => {
@@ -904,6 +940,21 @@ function setSpeed(val) {
 // ═══════════════════════════════════════════
 //  LOOP A/B
 // ═══════════════════════════════════════════
+function askLoopModal() {
+  return new Promise(resolve => {
+    const modal = document.getElementById('loopModal');
+    modal.classList.add('open');
+    const onKeep  = () => { modal.classList.remove('open'); cleanup(); resolve(true); };
+    const onClear = () => { modal.classList.remove('open'); cleanup(); resolve(false); };
+    function cleanup() {
+      document.getElementById('loopModalKeep').removeEventListener('click', onKeep);
+      document.getElementById('loopModalClear').removeEventListener('click', onClear);
+    }
+    document.getElementById('loopModalKeep').addEventListener('click', onKeep,  { once: true });
+    document.getElementById('loopModalClear').addEventListener('click', onClear, { once: true });
+  });
+}
+
 function setLoopPoint(point) {
   if (!isLoaded) return;
   if (point === 'a') {
@@ -914,6 +965,7 @@ function setLoopPoint(point) {
     document.getElementById('btnSetB').className = 'btn-loop-mark set-b';
   }
   updateWaveOverlays();
+  updateLoopLabel();
 }
 
 function toggleLoop() {
@@ -922,7 +974,17 @@ function toggleLoop() {
     alert('El punto A debe estar antes del punto B'); return;
   }
   loopActive = !loopActive;
-  document.getElementById('btnLoopToggle').classList.toggle('active', loopActive);
+  const btn = document.getElementById('btnLoopToggle');
+  btn.classList.toggle('active', loopActive);
+  updateLoopLabel();
+}
+
+function updateLoopLabel() {
+  const btn = document.getElementById('btnLoopToggle');
+  if (loopA !== null && loopB !== null) btn.textContent = 'A→B';
+  else if (loopA !== null)              btn.textContent = 'A→∞';
+  else if (loopB !== null)              btn.textContent = '0→B';
+  else                                  btn.textContent = 'LOOP';
 }
 
 function clearLoop() {
@@ -933,6 +995,7 @@ function clearLoop() {
   document.getElementById('waveLoopRegion').style.display = 'none';
   document.getElementById('waveMarkerA').style.display    = 'none';
   document.getElementById('waveMarkerB').style.display    = 'none';
+  updateLoopLabel();
 }
 
 function updateWaveOverlays() {
