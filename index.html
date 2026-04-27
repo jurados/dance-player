@@ -234,6 +234,11 @@
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowfullscreen></iframe>
       </div>
+      <!-- Video local desde el celular -->
+      <div id="localWrap" style="display:none;border-radius:10px;overflow:hidden;background:#000">
+        <video id="localVideoEl" playsinline webkit-playsinline muted
+               style="width:100%;max-height:60vw;object-fit:contain;display:block;border-radius:10px"></video>
+      </div>
       <!-- Instagram: no permite autoplay en iframe externo, abrimos en nueva pestaña -->
       <div id="igWrap" style="display:none;text-align:center;padding:20px 0">
         <div style="font-size:2.5rem;margin-bottom:8px">📸</div>
@@ -598,7 +603,8 @@ function updateNavButtons() {
 async function loadSong(idx) {
   const item     = queue[idx];
   const wasPlay  = !audio.paused;
-  audio.src = URL.createObjectURL(item.file);
+  const objUrl   = URL.createObjectURL(item.file);
+  audio.src = objUrl;
   audio.load();
   isLoaded = true; clearLoop();
   document.getElementById('btnPlay').textContent = '▶';
@@ -606,8 +612,44 @@ async function loadSong(idx) {
   document.getElementById('headerSongName').textContent = item.name;
   waveData = null;
   setupMediaSession(item.name);
+
+  // Local video display
+  const isVid = item.file.type.startsWith('video/') || /\.(mp4|mov|webm|mkv)$/i.test(item.file.name);
+  const localVideoEl = document.getElementById('localVideoEl');
+  const localWrap    = document.getElementById('localWrap');
+  const ytCard       = document.getElementById('ytCard');
+  const ytContainer  = document.getElementById('ytContainer');
+  const ytWrap       = document.getElementById('ytWrap');
+  const igWrap       = document.getElementById('igWrap');
+  if (isVid) {
+    localVideoEl.src = objUrl;
+    localVideoEl.playbackRate = speed / 100;
+    ytWrap.style.display  = 'none';
+    igWrap.style.display  = 'none';
+    localWrap.style.display  = 'block';
+    ytContainer.style.display = 'block';
+    ytCard.style.display      = 'block';
+    document.getElementById('btnYT').classList.add('active');
+    syncLocalVideo();
+  } else {
+    localWrap.style.display  = 'none';
+    localVideoEl.src = '';
+  }
+
   if (wasPlay) audio.addEventListener('canplay', () => audio.play(), { once: true });
   await decodeWaveform(item.file);
+}
+
+let _vidSynced = false;
+function syncLocalVideo() {
+  const v = document.getElementById('localVideoEl');
+  if (!v.src) return;
+  if (_vidSynced) return;
+  _vidSynced = true;
+  audio.addEventListener('play',       () => { if (v.src) v.play().catch(()=>{}); });
+  audio.addEventListener('pause',      () => { if (v.src) v.pause(); });
+  audio.addEventListener('seeked',     () => { if (v.src) v.currentTime = audio.currentTime; });
+  audio.addEventListener('ratechange', () => { if (v.src) v.playbackRate = audio.playbackRate; });
 }
 
 // ═══════════════════════════════════════════
@@ -761,6 +803,8 @@ function toggleSyncBPM() {
 function setSpeed(val) {
   speed = Math.max(50, Math.min(150, val));
   audio.playbackRate = speed / 100;
+  const localVideoEl = document.getElementById('localVideoEl');
+  if (localVideoEl.src) localVideoEl.playbackRate = speed / 100;
   speedSlider.value  = speed;
   speedInput.value   = speed;
   document.getElementById('speedFill').style.width = ((speed - 50) / 100 * 100) + '%';
