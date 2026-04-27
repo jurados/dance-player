@@ -210,13 +210,32 @@
   </div>
   <button class="btn-hdr" id="btnTheme" onclick="toggleTheme()" title="Cambiar tema">🌗</button>
   <button class="btn-hdr" id="btnWakeLock" onclick="toggleWakeLock()" title="Pantalla siempre activa">☀️</button>
-  <button class="btn-hdr" id="btnYT" onclick="toggleYT()" title="Video YouTube">▶</button>
+  <button class="btn-hdr" id="btnYT" onclick="toggleYT()" title="Video de referencia">📺</button>
   <button class="btn-hdr" id="btnQueueToggle" onclick="openDrawer()">
     ☰ &nbsp;<span id="queueCount">Canciones</span>
   </button>
 </div>
 
 <div class="content">
+
+  <!-- VIDEO DE REFERENCIA (YouTube / Instagram) -->
+  <div class="card" id="ytCard" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span class="card-title" style="margin-bottom:0">📺 Video de referencia</span>
+      <button onclick="toggleYT()" style="background:none;border:none;color:var(--text2);font-size:1.1rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input type="text" id="ytInput" placeholder="YouTube o Instagram URL"
+             style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-size:.85rem;outline:none">
+      <button onclick="loadVideo()"
+              style="background:var(--accent);border:none;border-radius:8px;color:#fff;padding:8px 14px;font-size:.85rem;font-weight:700;cursor:pointer">Cargar</button>
+    </div>
+    <div id="ytContainer" style="display:none;position:relative;height:0;overflow:hidden;border-radius:10px">
+      <iframe id="ytFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:10px"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen></iframe>
+    </div>
+  </div>
 
   <!-- REPRODUCTOR + VELOCIDAD + VOLUMEN -->
   <div class="card">
@@ -278,25 +297,6 @@
       </button>
     </div>
     <button class="btn-loop-clear" onclick="clearLoop()">✕ &nbsp;Limpiar loop</button>
-  </div>
-
-  <!-- YOUTUBE (opcional) -->
-  <div class="card" id="ytCard" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <span class="card-title" style="margin-bottom:0">▶ Video de referencia</span>
-      <button onclick="toggleYT()" style="background:none;border:none;color:var(--text2);font-size:1.1rem;cursor:pointer">✕</button>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input type="text" id="ytInput" placeholder="URL o ID de YouTube"
-             style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-size:.85rem;outline:none">
-      <button onclick="loadYT()"
-              style="background:var(--accent);border:none;border-radius:8px;color:#fff;padding:8px 14px;font-size:.85rem;font-weight:700;cursor:pointer">Cargar</button>
-    </div>
-    <div id="ytContainer" style="display:none;position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px">
-      <iframe id="ytFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:10px"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen></iframe>
-    </div>
   </div>
 
   <!-- METRÓNOMO -->
@@ -1240,16 +1240,30 @@ function toggleYT() {
   btn.classList.toggle('active', open);
 }
 
-function loadYT() {
+function loadVideo() {
   const raw = document.getElementById('ytInput').value.trim();
   if (!raw) return;
-  let id = raw;
-  // Extraer ID de URL completa
+  const frame     = document.getElementById('ytFrame');
+  const container = document.getElementById('ytContainer');
+
+  // Instagram: post, reel o tv
+  const igMatch = raw.match(/instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
+  if (igMatch) {
+    const [, type, id] = igMatch;
+    frame.src = `https://www.instagram.com/${type}/${id}/embed/`;
+    container.style.paddingBottom = '125%'; // proporción portrait de Instagram
+    container.style.display = 'block';
+    return;
+  }
+
+  // YouTube
+  let ytId = raw;
   const m = raw.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
-  if (m) id = m[1];
-  if (!/^[A-Za-z0-9_-]{11}$/.test(id)) { alert('URL o ID de YouTube no válido'); return; }
-  document.getElementById('ytFrame').src = `https://www.youtube-nocookie.com/embed/${id}?rel=0`;
-  document.getElementById('ytContainer').style.display = 'block';
+  if (m) ytId = m[1];
+  if (!/^[A-Za-z0-9_-]{11}$/.test(ytId)) { alert('URL no reconocida.\nPega una URL de YouTube o Instagram.'); return; }
+  frame.src = `https://www.youtube-nocookie.com/embed/${ytId}?rel=0`;
+  container.style.paddingBottom = '56.25%'; // 16:9 YouTube
+  container.style.display = 'block';
 }
 
 // ═══════════════════════════════════════════
