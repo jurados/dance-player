@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dance Player — Resumen del Proyecto</title>
+  <style>
+    :root {
+      --bg: #0e0e1a; --bg2: #1a1a2e; --bg3: #252540;
+      --accent: #7c6ff7; --accent2: #f7706f; --green: #4ec98a;
+      --cyan: #22d3ee; --gold: #fbbf24;
+      --text: #e8e8f0; --text2: #9090b0; --border: #2e2e50;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* ── Header ── */
+    .hero { background: linear-gradient(135deg, #12121f 0%, #1e1035 100%); border-bottom: 1px solid var(--border); padding: 48px 24px 40px; text-align: center; }
+    .hero-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+    .hero h1 { font-size: 2.2rem; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
+    .hero .sub { font-size: 1rem; color: var(--text2); max-width: 520px; margin: 0 auto 20px; }
+    .hero-links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 99px; font-size: .82rem; font-weight: 700; text-decoration: none; border: 1px solid; transition: opacity .15s; }
+    .pill:hover { opacity: .8; }
+    .pill-accent { background: rgba(124,111,247,.15); border-color: var(--accent); color: var(--accent); }
+    .pill-green  { background: rgba(78,201,138,.12); border-color: var(--green); color: var(--green); }
+    .pill-gray   { background: var(--bg3); border-color: var(--border); color: var(--text2); }
+
+    /* ── Layout ── */
+    .container { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; display: flex; flex-direction: column; gap: 36px; }
+
+    /* ── Cards ── */
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .section-title { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; color: var(--text2); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── Feature grid ── */
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .feature-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .feature-item h3 { font-size: .88rem; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 7px; }
+    .feature-item p { font-size: .78rem; color: var(--text2); line-height: 1.45; }
+
+    /* ── Stats row ── */
+    .stats { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat { flex: 1; min-width: 120px; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-val { font-size: 1.8rem; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: .72rem; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ── Files table ── */
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th { text-align: left; padding: 8px 12px; color: var(--text2); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    code { font-family: "SF Mono", "Fira Code", monospace; font-size: .82rem; background: var(--bg3); padding: 2px 7px; border-radius: 5px; color: var(--cyan); }
+
+    /* ── Architecture ── */
+    .arch-list { display: flex; flex-direction: column; gap: 4px; }
+    .arch-row { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-radius: 8px; transition: background .1s; }
+    .arch-row:hover { background: var(--bg3); }
+    .arch-name { font-size: .8rem; font-weight: 700; color: var(--accent); min-width: 180px; flex-shrink: 0; font-family: "SF Mono", monospace; }
+    .arch-desc { font-size: .78rem; color: var(--text2); }
+
+    /* ── State vars ── */
+    .var-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+    .var-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; }
+    .var-name { font-family: "SF Mono", monospace; font-size: .8rem; color: var(--cyan); font-weight: 700; margin-bottom: 2px; }
+    .var-type { font-size: .7rem; color: var(--gold); margin-bottom: 3px; }
+    .var-desc { font-size: .74rem; color: var(--text2); }
+
+    /* ── Commits ── */
+    .commit-list { display: flex; flex-direction: column; gap: 6px; }
+    .commit { display: flex; gap: 12px; align-items: baseline; padding: 8px 12px; background: var(--bg3); border-radius: 9px; border: 1px solid var(--border); }
+    .commit-hash { font-family: "SF Mono", monospace; font-size: .75rem; color: var(--accent); flex-shrink: 0; }
+    .commit-msg { font-size: .8rem; color: var(--text2); }
+
+    /* ── Keyboard shortcuts ── */
+    .shortcuts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+    .shortcut { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg3); border-radius: 9px; }
+    kbd { background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 2px 8px; font-family: "SF Mono", monospace; font-size: .78rem; color: var(--text); box-shadow: 0 1px 0 var(--border); flex-shrink: 0; }
+    .shortcut-desc { font-size: .78rem; color: var(--text2); }
+
+    /* ── Badge colors ── */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: .68rem; font-weight: 700; }
+    .badge-purple { background: rgba(124,111,247,.2); color: var(--accent); }
+    .badge-green  { background: rgba(78,201,138,.15); color: var(--green); }
+    .badge-red    { background: rgba(247,112,111,.15); color: var(--accent2); }
+    .badge-cyan   { background: rgba(34,211,238,.12); color: var(--cyan); }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.6rem; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .arch-name { min-width: 130px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-emoji">💃</div>
+  <h1>Dance Player</h1>
+  <p class="sub">PWA para ensayos de baile. Reproductor, metrónomo avanzado, loop A/B, detección de BPM y control de video — todo en un solo archivo HTML.</p>
+  <div class="hero-links">
+    <a class="pill pill-accent" href="https://jurados.github.io/dance-player/" target="_blank">🌐 Abrir app</a>
+    <a class="pill pill-green"  href="https://github.com/jurados/dance-player" target="_blank">📦 Repositorio</a>
+    <a class="pill pill-gray">1 archivo · 1 675 líneas</a>
+    <a class="pill pill-gray">Vanilla JS · Web Audio API</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="stat-val">1</div><div class="stat-label">Archivo HTML</div></div>
+    <div class="stat"><div class="stat-val">1 675</div><div class="stat-label">Líneas de código</div></div>
+    <div class="stat"><div class="stat-val">50+</div><div class="stat-label">Funciones JS</div></div>
+    <div class="stat"><div class="stat-val">12</div><div class="stat-label">Commits</div></div>
+    <div class="stat"><div class="stat-val">PWA</div><div class="stat-label">Instalable</div></div>
+  </div>
+
+  <!-- ARCHIVOS -->
+  <div class="card">
+    <div class="section-title">Archivos del proyecto</div>
+    <table>
+      <tr><th>Archivo</th><th>Descripción</th></tr>
+      <tr><td><code>index.html</code></td><td>Toda la app: CSS + HTML + JS en un solo archivo</td></tr>
+      <tr><td><code>manifest.json</code></td><td>Metadatos PWA — nombre, iconos, orientación portrait, color de tema</td></tr>
+      <tr><td><code>sw.js</code></td><td>Service Worker — caché offline <code>dance-player-v2</code></td></tr>
+      <tr><td><code>icon-192.png</code></td><td>Ícono PWA 192×192 px (fondo oscuro, nota musical)</td></tr>
+      <tr><td><code>icon-512.png</code></td><td>Ícono PWA 512×512 px</td></tr>
+    </table>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="card">
+    <div class="section-title">Funcionalidades</div>
+    <div class="feature-grid">
+
+      <div class="feature-item">
+        <h3>🎵 Reproductor de audio</h3>
+        <p>mp3, m4a, wav, ogg, flac, aac, opus, wma. <code>showOpenFilePicker()</code> en Android abre el gestor de archivos directamente. Fallback <code>&lt;input&gt;</code> en iOS.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🎬 Video local + YouTube</h3>
+        <p>Video importado se muestra en el panel superior. Audio separado al <code>&lt;audio&gt;</code>. YouTube embed. Instagram: link externo (Meta bloquea iframes).</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>📱 Modo landscape automático</h3>
+        <p>Al rotar el teléfono con video cargado, el video ocupa toda la pantalla con controles superpuestos. Wake Lock automático al entrar en landscape.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>📊 Forma de onda</h3>
+        <p>Decodificada con <code>decodeAudioData()</code>. Barras RMS con opacidad variable. Seek por tap, drag y gesto vertical (velocidad). Swipe rápido = cambio de canción.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🔁 Loop A/B avanzado</h3>
+        <p>Solo A → A→∞ · Solo B → 0→B · Ambos → A→B. Región y marcadores en la onda. Modal "Mantener/Limpiar" al cambiar canción. Anti-race con <code>_loadGen</code>.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>⚡ Control de velocidad</h3>
+        <p>Slider 50–150%. Gesto vertical en la onda (3 px = 1%). <code>preservesPitch</code> activo. Sync con BPM opcional. Reseteo automático al cargar nueva canción.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🥁 Metrónomo avanzado</h3>
+        <p>Scheduler con lookahead 120 ms. Sonidos: Clic (oscilador) y Palmas (ruido blanco). 8 beats, subdivisión visual. Acentos personalizables. Pre-cuenta 1/2 compases.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🎯 Detección de BPM</h3>
+        <p>Pulse-train correlation, 24 fases × 161 BPMs candidatos. Preferencia ×1.15 para rango salsa/bachata (110–195). Ajuste fino ±1/±5 post-detección.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>👆 Tap BPM</h3>
+        <p>Hasta 8 taps, promedio de intervalos. Muestra el BPM calculado en el botón. "Aplicar" confirma. Botón de ajuste fino ±1/±5 visible tras aplicar.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🗣️ BPM hablado</h3>
+        <p><code>SpeechSynthesisUtterance</code>, voz es-ES, rate 2.2. Anuncia "uno, dos, tres..." sincronizado con el metrónomo.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🎧 Controles Bluetooth</h3>
+        <p>Media Session API con 7 handlers. Doble press atrás: reinicia si &gt;3 s, canción anterior si &lt;3 s. <code>seekbackward/forward</code> para modelos que usan seek.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🪞 Modo espejo</h3>
+        <p>Overlay fullscreen con el contador de beat grande (para proyectar). Pulso visual en acento 1 (color rojo), demás beats (color púrpura). Pre-cuenta visible.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🌗 Tema claro/oscuro</h3>
+        <p>Toggle en el header. CSS variables para todos los colores. Sin dependencias externas.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>☀️ Wake Lock</h3>
+        <p><code>navigator.wakeLock.request('screen')</code>. Activo manual desde header. Automático al entrar en landscape. Indicador visual en el botón.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>📲 PWA instalable</h3>
+        <p>Manifest + Service Worker. Funciona offline. Instalable en Android (Chrome) e iOS (Safari "Añadir a pantalla de inicio"). Orientación portrait.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>🔀 Cola con drag & drop</h3>
+        <p>Handle ⠿ en cada ítem. Eventos <code>touchstart/move/end</code>. Actualiza <code>queueIdx</code> correctamente al mover la canción activa o mover otras por encima.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>⌨️ Atajos de teclado</h3>
+        <p>Space, A, B, L, M, T, ←→↑↓. Compatibles con teclados Bluetooth y pedales de página.</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>💬 Toasts y modales</h3>
+        <p>Toast auto-dismiss (2.6 s) para errores no bloqueantes. Mini-modal con diseño propio para confirmaciones. Sin <code>alert()</code> ni <code>confirm()</code> nativos.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SHORTCUTS -->
+  <div class="card">
+    <div class="section-title">Atajos de teclado / Bluetooth</div>
+    <div class="shortcuts-grid">
+      <div class="shortcut"><kbd>Space</kbd><span class="shortcut-desc">Play / Pause</span></div>
+      <div class="shortcut"><kbd>A</kbd><span class="shortcut-desc">Marcar punto A del loop</span></div>
+      <div class="shortcut"><kbd>B</kbd><span class="shortcut-desc">Marcar punto B del loop</span></div>
+      <div class="shortcut"><kbd>L</kbd><span class="shortcut-desc">Activar / desactivar loop</span></div>
+      <div class="shortcut"><kbd>M</kbd><span class="shortcut-desc">Iniciar / detener metrónomo</span></div>
+      <div class="shortcut"><kbd>T</kbd><span class="shortcut-desc">Tap BPM</span></div>
+      <div class="shortcut"><kbd>← →</kbd><span class="shortcut-desc">BPM −1 / +1</span></div>
+      <div class="shortcut"><kbd>↑ ↓</kbd><span class="shortcut-desc">Velocidad +5% / −5%</span></div>
+      <div class="shortcut"><kbd>2× press ⏮</kbd><span class="shortcut-desc">Reiniciar o canción anterior (BT)</span></div>
+      <div class="shortcut"><kbd>2× press ⏭</kbd><span class="shortcut-desc">Siguiente canción (BT)</span></div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="card">
+    <div class="section-title">Arquitectura — secciones del código</div>
+    <div class="arch-list">
+      <div class="arch-row"><span class="arch-name">ESTADO</span><span class="arch-desc">Variables globales: loopA/B, speed, queue, bpm, metrónomo, flags</span></div>
+      <div class="arch-row"><span class="arch-name">WAKE LOCK</span><span class="arch-desc">toggleWakeLock() — navigator.wakeLock con manejo de release</span></div>
+      <div class="arch-row"><span class="arch-name">MEDIA SESSION</span><span class="arch-desc">setupMediaSession() — 7 handlers para auriculares BT y pantalla de bloqueo</span></div>
+      <div class="arch-row"><span class="arch-name">DRAWER / COLA</span><span class="arch-desc">openDrawer, addFiles, openAudioPicker, renderQueue, initDragReorder</span></div>
+      <div class="arch-row"><span class="arch-name">CARGA DE CANCIÓN</span><span class="arch-desc">loadSong() async con _loadGen anti-race, reset velocidad, modal loop</span></div>
+      <div class="arch-row"><span class="arch-name">VIDEO SYNC</span><span class="arch-desc">_hasLocalVideo flag, handlers nombrados _vid*, syncLocalVideo()</span></div>
+      <div class="arch-row"><span class="arch-name">FORMA DE ONDA</span><span class="arch-desc">decodeWaveform, drawWaveform (RMS), seekFromWave, gestos touch</span></div>
+      <div class="arch-row"><span class="arch-name">TRANSPORT</span><span class="arch-desc">togglePlay, ended/timeupdate/loadedmetadata, loop en timeupdate</span></div>
+      <div class="arch-row"><span class="arch-name">VELOCIDAD</span><span class="arch-desc">setSpeed(val) — slider, input, fill, video, syncBPM</span></div>
+      <div class="arch-row"><span class="arch-name">LOOP A/B</span><span class="arch-desc">askLoopModal (_modalResolve), setLoopPoint, toggleLoop, updateWaveOverlays</span></div>
+      <div class="arch-row"><span class="arch-name">MIRROR</span><span class="arch-desc">openMirror, updateMirror — fullscreen beat counter con pulso visual</span></div>
+      <div class="arch-row"><span class="arch-name">METRÓNOMO CORE</span><span class="arch-desc">getCtx, setMetVol, setSongVol, toggleAccent, setPhaseOffset</span></div>
+      <div class="arch-row"><span class="arch-name">BPM DETECTION</span><span class="arch-desc">detectBPM() — pulse-train correlation, 24 fases, suavizado, preferencia rango</span></div>
+      <div class="arch-row"><span class="arch-name">SONIDOS</span><span class="arch-desc">SOUNDS: click (oscilador), palmas (ruido blanco + BiquadFilter)</span></div>
+      <div class="arch-row"><span class="arch-name">SCHEDULER</span><span class="arch-desc">runScheduler (lookahead 120ms), highlightBeat, startMetronome, restartScheduler</span></div>
+      <div class="arch-row"><span class="arch-name">BPM CONTROL</span><span class="arch-desc">changeBPM, hold buttons, setGenre (bachata/salsa), tapBPM, applyTapBPM</span></div>
+      <div class="arch-row"><span class="arch-name">SPEECH</span><span class="arch-desc">toggleSpeech — SpeechSynthesisUtterance, es-ES, rate 2.2</span></div>
+      <div class="arch-row"><span class="arch-name">LANDSCAPE VIDEO</span><span class="arch-desc">openLandscape (async + wakeLock), closeLandscape, handleOrientation</span></div>
+      <div class="arch-row"><span class="arch-name">ATAJOS TECLADO</span><span class="arch-desc">keydown — Space, A, B, L, M, T, ←→↑↓</span></div>
+      <div class="arch-row"><span class="arch-name">YOUTUBE</span><span class="arch-desc">toggleYT, loadVideo — embed YouTube + link Instagram</span></div>
+      <div class="arch-row"><span class="arch-name">UTILIDADES</span><span class="arch-desc">fmt(s), escHtml(s), showToast(msg)</span></div>
+    </div>
+  </div>
+
+  <!-- STATE VARS -->
+  <div class="card">
+    <div class="section-title">Variables de estado clave</div>
+    <div class="var-grid">
+      <div class="var-item"><div class="var-name">queue</div><div class="var-type">Array&lt;{file, name}&gt;</div><div class="var-desc">Cola de canciones cargadas</div></div>
+      <div class="var-item"><div class="var-name">queueIdx</div><div class="var-type">number</div><div class="var-desc">Índice de la canción activa</div></div>
+      <div class="var-item"><div class="var-name">loopA / loopB</div><div class="var-type">number | null</div><div class="var-desc">Tiempos del loop en segundos</div></div>
+      <div class="var-item"><div class="var-name">loopActive</div><div class="var-type">boolean</div><div class="var-desc">Si el loop está corriendo</div></div>
+      <div class="var-item"><div class="var-name">speed</div><div class="var-type">number (50–150)</div><div class="var-desc">Velocidad de reproducción actual</div></div>
+      <div class="var-item"><div class="var-name">bpm / baseBPM</div><div class="var-type">number</div><div class="var-desc">BPM actual y base para sync con velocidad</div></div>
+      <div class="var-item"><div class="var-name">syncBPM</div><div class="var-type">boolean</div><div class="var-desc">BPM se recalcula al mover velocidad</div></div>
+      <div class="var-item"><div class="var-name">metroRunning</div><div class="var-type">boolean</div><div class="var-desc">Si el metrónomo está activo</div></div>
+      <div class="var-item"><div class="var-name">waveData</div><div class="var-type">Float32Array | null</div><div class="var-desc">PCM de la forma de onda decodificada</div></div>
+      <div class="var-item"><div class="var-name">_hasLocalVideo</div><div class="var-type">boolean</div><div class="var-desc">Si hay video local cargado (evita .src url issues)</div></div>
+      <div class="var-item"><div class="var-name">_loadGen</div><div class="var-type">number</div><div class="var-desc">Contador generación para cancelar loadSong concurrentes</div></div>
+      <div class="var-item"><div class="var-name">_modalResolve</div><div class="var-type">function | null</div><div class="var-desc">Resolver del modal de loop para cancelación</div></div>
+      <div class="var-item"><div class="var-name">wakeLock</div><div class="var-type">WakeLockSentinel | null</div><div class="var-desc">Objeto de wake lock activo</div></div>
+      <div class="var-item"><div class="var-name">accentBeats</div><div class="var-type">Set&lt;number&gt;</div><div class="var-desc">Beats que suenan con acento en el metrónomo</div></div>
+      <div class="var-item"><div class="var-name">_landscapeOpen</div><div class="var-type">boolean</div><div class="var-desc">Si el overlay de video landscape está visible</div></div>
+    </div>
+  </div>
+
+  <!-- COMMITS -->
+  <div class="card">
+    <div class="section-title">Historial de cambios</div>
+    <div class="commit-list">
+      <div class="commit"><span class="commit-hash">b6aca8e</span><span class="commit-msg">Fix speedFill sync, loop modal race condition, landscape wake lock; remove conga/clave</span></div>
+      <div class="commit"><span class="commit-hash">0ee96e3</span><span class="commit-msg">Fix 4 bugs and add drag-to-reorder queue</span></div>
+      <div class="commit"><span class="commit-hash">ea34996</span><span class="commit-msg">Fix single-sided loop, speed/BPM reset, and loop modal</span></div>
+      <div class="commit"><span class="commit-hash">8922010</span><span class="commit-msg">Fix 5 bugs: loop prompt, metronome auto-pause, header truncation, video loop sync, speed reset</span></div>
+      <div class="commit"><span class="commit-hash">b15e6be</span><span class="commit-msg">Improve Bluetooth headphone controls via Media Session API</span></div>
+      <div class="commit"><span class="commit-hash">aa99945</span><span class="commit-msg">Add 4 features: fine-tune BPM, landscape video, swipe to change song, single-point loop</span></div>
+      <div class="commit"><span class="commit-hash">5e47983</span><span class="commit-msg">Show local video files in the video panel when loaded</span></div>
+      <div class="commit"><span class="commit-hash">3d8949a</span><span class="commit-msg">Fix loop buttons: all equal horizontal flex, remove vertical LOOP text</span></div>
+      <div class="commit"><span class="commit-hash">e3faf12</span><span class="commit-msg">Fix iOS file picker; add video file support; explain wake lock</span></div>
+      <div class="commit"><span class="commit-hash">da304de</span><span class="commit-msg">Fix showOpenFilePicker for direct file access; Instagram opens externally</span></div>
+      <div class="commit"><span class="commit-hash">862ef9a</span><span class="commit-msg">Video panel at top, add Instagram embed support (posts, reels)</span></div>
+      <div class="commit"><span class="commit-hash">35eed8a</span><span class="commit-msg">Dance Player PWA — initial release</span></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
