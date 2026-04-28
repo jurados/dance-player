@@ -521,7 +521,7 @@ audio.preservesPitch = audio.webkitPreservePitch = audio.mozPreservePitch = true
 // ═══════════════════════════════════════════
 async function toggleWakeLock() {
   const btn = document.getElementById('btnWakeLock');
-  if (!('wakeLock' in navigator)) { alert('Tu navegador no soporta esta función'); return; }
+  if (!('wakeLock' in navigator)) { showToast('Tu navegador no soporta Wake Lock'); return; }
   try {
     if (wakeLock) {
       await wakeLock.release();
@@ -655,8 +655,7 @@ function renderQueue() {
               style="background:none;border:none;color:var(--text2);font-size:.85rem;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Renombrar">✏️</button>
       ${i === queueIdx ? '<span style="flex-shrink:0">▶</span>' : ''}
     </div>`).join('');
-  initDragReorder();
-  updateNavButtons();   // ← fix: siempre actualizar al renderizar
+  updateNavButtons();
 }
 
 function jumpTo(idx) {
@@ -716,6 +715,8 @@ function initDragReorder() {
     _dragSrc = -1;
   });
 }
+
+initDragReorder(); // one-time init; event delegation handles all renders
 
 function updateNavButtons() {
   document.getElementById('btnPrev').classList.toggle('disabled', queueIdx <= 0);
@@ -893,7 +894,7 @@ waveContainer.addEventListener('touchmove', e => {
   } else if (!waveTouch.moved && Math.abs(dx) > 6) {
     waveTouch.moved = 'horizontal';
   }
-  if (waveTouch.moved === 'horizontal') seekFromWave(e);
+  // seek is deferred to touchend to avoid seeking before a fast-swipe song change
 }, { passive: true });
 
 waveContainer.addEventListener('touchend', e => {
@@ -902,8 +903,9 @@ waveContainer.addEventListener('touchend', e => {
     const dt  = Date.now() - waveTouch.t0;
     const pct = Math.abs(dx) / waveContainer.clientWidth;
     if (pct > 0.35 && dt < 380) {
-      // Swipe rápido: cambiar canción
       if (dx < 0) nextSong(); else prevSong();
+    } else {
+      seekFromWave({ clientX: e.changedTouches[0]?.clientX ?? (waveTouch.x + dx) });
     }
   }
   waveTouch = null;
@@ -1489,7 +1491,7 @@ let speechEnabled = false;
 const BEAT_NAMES = ['uno','dos','tres','cuatro','cinco','seis','siete','ocho'];
 
 function toggleSpeech() {
-  if (!('speechSynthesis' in window)) { alert('Tu navegador no soporta síntesis de voz'); return; }
+  if (!('speechSynthesis' in window)) { showToast('Tu navegador no soporta síntesis de voz'); return; }
   speechEnabled = !speechEnabled;
   document.getElementById('btnSpeech').classList.toggle('active', speechEnabled);
   if (!speechEnabled) speechSynthesis.cancel();
@@ -1576,7 +1578,7 @@ function loadVideo() {
   const m = raw.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
   if (m) ytId = m[1];
   if (!/^[A-Za-z0-9_-]{11}$/.test(ytId)) {
-    alert('URL no reconocida.\nPega una URL de YouTube o Instagram.');
+    showToast('URL no reconocida. Pega una URL de YouTube o Instagram.');
     return;
   }
   document.getElementById('ytFrame').src = `https://www.youtube-nocookie.com/embed/${ytId}?rel=0`;
