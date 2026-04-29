@@ -171,6 +171,8 @@ UTILIDADES        — fmt(), escHtml()
 
 | Hash | Descripción |
 |---|---|
+| `5305427` | Fix 3 bugs: drag reorder duplicate listeners, swipe seeks current song, remaining alert() calls |
+| `11cd4ab` | Add project summary in Markdown and HTML |
 | `b6aca8e` | Fix speedFill sync, loop modal race condition, landscape wake lock; remove conga/clave |
 | `0ee96e3` | Fix 4 bugs and add drag-to-reorder queue |
 | `ea34996` | Fix single-sided loop, speed/BPM reset, and loop modal |
